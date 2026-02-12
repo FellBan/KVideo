@@ -113,7 +113,7 @@ function getDefaultAppSettings(): AppSettings {
     skipOutroSeconds: 0,
     showModeIndicator: false,
     adFilter: false,
-    adFilterMode: 'heuristic',
+    adFilterMode: 'off',
     adKeywords: [],
     realtimeLatency: false,
     searchDisplayMode: 'normal',
