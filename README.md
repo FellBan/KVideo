@@ -55,7 +55,7 @@
 - **搜索历史**：自动保存搜索历史，支持快速重新搜索
 - **搜索结果显示**：支持默认显示和合并同名源两种模式
 - **实时延迟监测**：可选实时显示各源的网络延迟
-- **源过滤**：支持按源和类型筛选搜索结果，源标签支持按类型分组显示，智能合并同名分类标签
+- **源过滤**：支持按源和类型筛选搜索结果，源标签支持按类型分组显示，智能合并同名分类标签，展开/折叠状态持久化记忆
 - **多级标签**：搜索结果和播放器中显示源名称和内容类型双重标签
 
 ### 多线路折叠
@@ -70,7 +70,11 @@
 ### IPTV 直播
 
 - **M3U 播放列表**：支持导入和管理 M3U/M3U8 格式的 IPTV 源
+- **JSON 频道列表**：支持导入 JSON 格式的频道列表（数组或对象格式，自动识别）
 - **频道网格**：按分组展示频道，支持分页浏览，大列表搜索优化
+- **多级频道列表**：播放器内按源分组 → 按分类分组 → 频道的三级列表导航
+- **多线路折叠**：频道多线路默认显示前 3 条，可点击展开查看全部
+- **自动切源**：当视频源不可用时，自动选择延迟最低的可用源
 - **自定义请求头**：自动解析 M3U 中的 `http-user-agent` 和 `http-referrer` 属性，通过代理传递
 - **流媒体代理**：内置 HLS 流代理，自动处理 CORS 问题和 M3U8 URL 重写
 - **智能内容检测**：当 content-type 不明确时，检查响应体内容自动识别 M3U8 格式，同时保持二进制流数据完整性
@@ -80,6 +84,7 @@
 - **并发控制**：最多同时拉取 3 个源，防止网络拥堵
 - **权限控制**：通过 `iptv_access` 权限控制谁可以访问 IPTV 功能
 - **键盘快捷键**：播放器内支持空格暂停/继续、F 全屏、M 静音、方向键调节音量等
+- **搜索优化**：播放器内搜索使用 `useTransition` 非阻塞渲染，避免大列表卡顿
 
 ### 豆瓣集成
 
@@ -556,18 +561,13 @@ docker run -d -p 3000:3000 \
    - **Build output directory**: 输入 `.vercel/output/static`
    - 点击 **Save and Deploy**。
 
-4. **关键步骤：修复运行时环境**
-   > *注意：此时部署虽然显示"Success"，但你会发现访问网页会报错。这是因为缺少必要的兼容性配置。请按以下步骤修复：*
+4. **等待部署完成**：
+   > 项目已内置 `wrangler.toml` 配置文件，其中包含 `nodejs_compat` 兼容性标志，无需手动配置。
 
-   - 进入 **[项目设置页面](https://dash.cloudflare.com/?to=/:account/pages/view/kvideo/settings/production)** (如果你的项目名不是 kvideo，请在控制台手动查找 Settings -> Functions)。
-   - 拉到页面底部找到 **Compatibility flags** 部分。
-   - 添加标志：`nodejs_compat`
-
-5. **重试部署 (生效配置)**：
-   - 回到 **[项目概览页面](https://dash.cloudflare.com/?to=/:account/pages/view/kvideo)**。
-   - 在 **Deployments** 列表中，找到最新的那次部署。
-   - 点击右侧的三个点 `...` 菜单，选择 **Retry deployment**。
-   - 等待新的部署完成后，你的 KVideo 就部署成功了！
+5. **如果部署失败**：
+   > 如果看到 `Unknown internal error occurred` 错误，这通常是 Cloudflare 的临时服务端问题。请在 **Deployments** 列表中找到最新部署，点击 `...` 菜单选择 **Retry deployment** 重试即可。
+   >
+   > 如果首次部署仍有问题，可尝试在 **[项目设置页面](https://dash.cloudflare.com/?to=/:account/pages/view/kvideo/settings/production)** 底部的 **Compatibility flags** 中手动添加 `nodejs_compat`，然后重新部署。
 
 #### 选项 3：Docker 部署
 
@@ -667,6 +667,8 @@ npm start
    或通过 U 盘、文件管理器等方式侧载安装。
 
 > **注意**：此 APK 是一个 WebView 壳应用，需要你的 KVideo 实例已经部署并可访问。APK 本身不包含 KVideo 代码，仅作为 TV 端的浏览器入口。
+>
+> **最低系统要求**：Android 8.0 (API 26) 及以上。Android 7.0 及更低版本的 WebView 不支持本项目使用的 ES2017+ JavaScript 特性和现代 CSS，可能导致白屏。如遇白屏问题，请升级系统 WebView 或使用 Android 8.0+ 设备。
 
 #### 选项 6：Apple TV 应用构建
 
@@ -733,6 +735,34 @@ npm start
 ```
 
 > **自动化部署**：本项目使用 GitHub Actions 自动构建和发布 Docker 镜像。每次代码推送到 main 分支时，会自动构建多架构镜像并推送到 Docker Hub。
+
+## 常见问题
+
+### Cloudflare Pages 部署报 "Unknown internal error"
+
+这是 Cloudflare 的临时服务端错误，与代码无关。请在 Deployments 列表中重试部署即可。项目已内置 `wrangler.toml` 配置 `nodejs_compat` 兼容性标志。
+
+### IPv6 环境下 HTTPS 访问视频无法播放
+
+如果你的网络使用 IPv6 访问，且通过路由器端口映射（如 20443 → 443），请确保：
+- 反向代理（如 Caddy/Nginx）正确监听 IPv6 地址
+- 路由器的 IPv6 端口映射规则与 IPv4 一致
+- 如使用非标准端口，确保 IPv6 防火墙规则也已放行
+
+这是网络/反向代理配置问题，非 KVideo 代码问题。
+
+### Android 7.0 设备白屏
+
+Android 7.0 (API 24) 的 WebView 基于 Chrome 51，不支持本项目使用的现代 JavaScript（ES2017+）和 CSS 特性。最低要求 Android 8.0 (API 26) 及以上。
+
+### IPTV 部分直播流无法播放
+
+浏览器原生仅支持 HLS (m3u8) 和部分 MP4/WebM 格式。以下格式在浏览器中不受支持：
+- RTMP/RTSP 流（需要专用播放器如 VLC/PotPlayer）
+- 某些加密或受 DRM 保护的流
+- 需要特定客户端验证的流
+
+KVideo 已内置代理服务器自动处理 CORS 问题和 HLS URL 重写，大部分 HLS 直播流应能正常播放。
 
 ## 贡献代码
 

@@ -109,14 +109,14 @@ export function JsonImportTab() {
             </p>
             <div className="mt-2 space-y-1 max-h-[150px] overflow-y-auto">
               {preview.map((s, i) => (
-                <div key={i} className="text-xs text-[var(--text-color-secondary)] flex gap-2">
+                <div key={i} className="text-xs text-[var(--text-color-secondary)] flex gap-2 flex-wrap">
                   <span className="font-medium text-[var(--text-color)]">{s.name}</span>
                   <span className="truncate">{s.baseUrl}</span>
                 </div>
               ))}
             </div>
           </div>
-          <div className="flex gap-2">
+          <div className="flex gap-2 flex-wrap">
             <button
               onClick={() => { setPreview(null); }}
               className="flex-1 px-4 py-2 bg-[var(--glass-bg)] border border-[var(--glass-border)] text-[var(--text-color)] rounded-[var(--radius-2xl)] text-sm hover:bg-[var(--glass-hover)] transition-all cursor-pointer"
